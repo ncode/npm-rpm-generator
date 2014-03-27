@@ -1,0 +1,69 @@
+# Copyright 2014
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#        http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+# @author: Juliano Martinez (ncode)
+
+#compiler-settings
+cheetahVarStartToken = @
+#end compiler-settings
+
+%define _prefix /usr
+
+Name:      nodejs-@name
+Version:   @version
+Release:   1
+Summary:   @description
+Packager:  Juliano Martinez <juliano\@martinez.io>
+License:   Copyright Joyent, Inc. and other Node contributors.
+URL:       @homepage
+Group:     Development/Libraries
+Source:    nodejs-@{name}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildArch: %{_arch}
+
+Requires:  nodejs >= @node
+
+
+%description
+@description
+
+
+%prep
+%setup -q -n nodejs-@name
+
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%__install -d "%{buildroot}%{_prefix}"
+find ./lib/node_modules/ -type d -name test | xargs -I {} rm -rf {}
+cp -pr ./* "%{buildroot}%{_prefix}"
+
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+
+%files
+%defattr(-,root,root,-)
+%{_prefix}/lib/node_modules/@name/
+#for @file in @bin
+@file
+#end for
+%doc
+
+
+%changelog
+* Thu Mar  27 2014 Juliano Martinez <juliano.martinez\@booking.com> - @version
+- Initial version
