@@ -40,7 +40,8 @@ def meta_generator(module, workdir):
         'workdir': workdir,
         'tmpdir': tmpdir,
         'name': 'nodejs-%s' % name,
-        'npm_meta': None
+        'npm_meta': None,
+        'module': name
     }
     os.chdir(tmpdir)
     os.mkdir(name)
@@ -55,18 +56,18 @@ def meta_generator(module, workdir):
 
     if os.path.isdir('%s/%s/bin/' % (tmpdir, data['name'])):
         for _file in os.listdir('%s/%s/bin/' % (tmpdir, data['name'])):
-            data['bin'].append('%%attr(0755,root,root) %%{_prefix}/bin/%s;' % _file)
-
-    if not 'homepage' in meta['npm_meta']:
-        meta['npm_meta'].update(
-            {'homepage': 'https://npmjs.org/package/%s' % name}
-        )
+            data['bin'].append('%%attr(0755,root,root) %%{_prefix}/bin/%s' % _file)
 
     data['npm_meta'] = json.loads(open(
         '%s/%s/lib/node_modules/%s/package.json' % (
             tmpdir, data['name'], name
         )).read()
     )
+
+    if not 'homepage' in data['npm_meta']:
+        data['npm_meta'].update(
+            {'homepage': 'https://npmjs.org/package/%s' % name}
+        )
     return data
 
 
@@ -81,9 +82,11 @@ def setup_workdir():
 
 
 def render_spec(meta):
-    dependencies = {'nodejs': meta['nodejs']}
-    for module, version in meta['npm_meta']['dependencies']:
-        dependencies.update({module: version.ltrim('~')})
+    dependencies = [('nodejs', meta['nodejs'])]
+    if 'dependencies' in meta['npm_meta']:
+        for module, version in meta['npm_meta']['dependencies'].iteritems():
+            dependencies.append((module, version.lstrip('~')))
+    print dependencies
 
     render = Template(
         file='/home/jumartinez/nodejs-module-spec.tmpl',
@@ -93,15 +96,20 @@ def render_spec(meta):
             'description': meta['npm_meta']['description'],
             'homepage': meta['npm_meta']['homepage'],
             'bin': meta['bin'],
+            'source': os.path.basename(meta['source']),
+            'module': meta['module'],
             'dependencies': dependencies
         }]
     )
+    open('%s/SPECS/%s.spec' %
+        (meta['workdir'], meta['name']),
+    'w').write(str(render))
     print render
 
 
 def build_deps(dependencies):
-    for module, version in dependencies:
-        build(module)
+    for module, version in dependencies.iteritems():
+        build('%s@%s' % (module, version))
 
 
 def build(module):
@@ -109,11 +117,25 @@ def build(module):
     meta = meta_generator(module, workdir)
     meta.update({'nodejs': nodejs})
 
-
     if 'dependencies' in meta['npm_meta']:
-        build_deps(meta['npm_meta']['dependencies']):
+        build_deps(meta['npm_meta']['dependencies'])
 
     render_spec(meta)
+    subprocess.check_output(
+        ('rpmbuild -ba --define="_topdir %s" '
+         '--define="_tmppath %s/tmp" %s/SPECS/%s.spec' % (
+            meta['workdir'], meta['workdir'],
+            meta['workdir'], meta['name']
+         )
+        ),
+        stderr=subprocess.STDOUT, shell=True
+    )
+
+    for _file in os.listdir('%s/RPMS' % meta['workdir']):
+        shutil.move('%s/RPMS/%s' % (meta['workdir'], _file), '/home/jumartinez/RPMS/%s' % _file)
+
+    for _file in os.listdir('%s/SRPMS' % meta['workdir']):
+        shutil.move('%s/SRPMS/%s' % (meta['workdir'], _file), '/home/jumartinez/SRPMS/%s' % _file)
 
 if __name__ == '__main__':
 
