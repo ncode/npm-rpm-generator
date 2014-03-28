@@ -62,7 +62,6 @@ def meta_generator(module, workdir):
             tmpdir, data['name'], name
         )).read()
     )
-
     return data
 
 
@@ -93,8 +92,15 @@ def render_spec(meta):
 if __name__ == '__main__':
 
     module = sys.argv[1]
+    try:
+        nodejs = subprocess.check_output(["node", "-v"]).strip().lstrip('v')
+        npm = subprocess.check_output(["npm", "-v"]).strip()
+    except Exception as e:
+        print "You have to have nodejs and npm installed before start"
+        sys.exit(1)
     workdir = setup_workdir()
     meta = meta_generator(module, workdir)
+    meta.update({'nodejs': nodejs})
     if 'homepage' in meta['npm_meta']:
         print meta['npm_meta']['homepage']
 
