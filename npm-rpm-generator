@@ -75,6 +75,10 @@ def setup_workdir():
     return workdir
 
 def render_spec(meta):
+    dependencies = {'nodejs': meta['nodejs']}
+    for module, version in meta['npm_meta']['dependencies']:
+        dependencies.update({module: version.ltrim('~')})
+
     render = Template(
         file='/home/jumartinez/nodejs-module-spec.tmpl',
         searchList=[{
@@ -82,10 +86,15 @@ def render_spec(meta):
             'name': meta['name'],
             'description': meta['npm_meta']['description'],
             'homepage': meta['npm_meta']['homepage'],
-            'bin': meta['bin']
+            'bin': meta['bin'],
+            'dependencies': dependencies
         }]
     )
     print render
+
+def build_deps(dependencies):
+    for module, version in dependencies:
+        build(module)
 
 def build(module):
     workdir = setup_workdir()
@@ -102,7 +111,9 @@ def build(module):
 if __name__ == '__main__':
 
     if len(sys.argv) != 2:
-        print "Usage:: %s module@version" % os.path.basename(sys.arv[0])
+        print "Usage::"
+        print "    %s module@version -> for a specific version" % os.path.basename(sys.arv[0])
+        print "    %s module         -> for the latest version" % os.path.basename(sys.arv[0])
         sys.exit(1)
 
     module = sys.argv[1] if '@' in sys.argv[1] else "@%s" % sys.argv[1]
