@@ -98,7 +98,7 @@ def render_spec(meta):
     print dependencies
 
     render = Template(
-        file='/home/jumartinez/nodejs-module-spec.tmpl',
+        file='nodejs-module-spec.tmpl',
         searchList=[{
             'version': meta['npm_meta']['version'].replace('-','_'),
             'name': meta['name'],
@@ -147,12 +147,12 @@ def build(module):
             if '/SRPMS/' in _file:
                 shutil.move(
                     _file,
-                    '/home/jumartinez/SRPMS/%s' % os.path.basename(_file)
+                    '/tmp/SRPMS/%s' % os.path.basename(_file)
                 )
             elif '/RPMS/' in _file:
                 shutil.move(
                     _file,
-                    '/home/jumartinez/RPMS/%s' % os.path.basename(_file)
+                    '/tmp/RPMS/%s' % os.path.basename(_file)
                 )
 
 if __name__ == '__main__':
