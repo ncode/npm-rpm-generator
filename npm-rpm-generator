@@ -51,12 +51,21 @@ def meta_generator(module, workdir):
         ),
         stderr=subprocess.STDOUT, shell=True
     )
-    with tarfile.open(data['source'], 'w:gz') as tar:
-        tar.add(data['name'], arcname=os.path.basename(data['name']))
 
     if os.path.isdir('%s/%s/bin/' % (tmpdir, data['name'])):
         for _file in os.listdir('%s/%s/bin/' % (tmpdir, data['name'])):
-            data['bin'].append('%%attr(0755,root,root) %%{_prefix}/bin/%s' % _file)
+            # yeap, no comments about it, right?
+            # why would you use the same name of something on coreutils? WHY?
+            if os.path.isfile('/usr/bin/%s' % _file):
+                os.unlink('%s/%s/bin/%s' % (tmpdir, data['name'], _file))
+                continue
+            data['bin'].append('%%attr(0755,root,root) %%{_bindir}/%s' % _file)
+
+    with tarfile.open(data['source'], 'w:gz') as tar:
+        tar.add(
+            data['name'], arcname=os.path.basename(data['name']),
+            filter=lambda x: None if '/test/' in x.name else x
+        )
 
     data['npm_meta'] = json.loads(open(
         '%s/%s/lib/node_modules/%s/package.json' % (
