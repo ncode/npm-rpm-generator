@@ -21,7 +21,7 @@ cheetahVarStartToken = @
 
 %define _prefix /usr
 
-Name:      nodejs-@name
+Name:      @name
 Version:   @version
 Release:   1
 Summary:   @description
@@ -29,11 +29,13 @@ Packager:  Juliano Martinez <juliano\@martinez.io>
 License:   Copyright Joyent, Inc. and other Node contributors.
 URL:       @homepage
 Group:     Development/Libraries
-Source:    nodejs-@{name}.tar.gz
+Source:    @{source}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: %{_arch}
 
-Requires:  nodejs >= @node
+#for @dname, @dversion in @dependencies
+Requires:  @dname >= @dversion
+#end for
 
 
 %description
@@ -41,13 +43,12 @@ Requires:  nodejs >= @node
 
 
 %prep
-%setup -q -n nodejs-@name
+%setup -q -n @name
 
 
 %install
 rm -rf $RPM_BUILD_ROOT
 %__install -d "%{buildroot}%{_prefix}"
-find ./lib/node_modules/ -type d -name test | xargs -I {} rm -rf {}
 cp -pr ./* "%{buildroot}%{_prefix}"
 
 
@@ -57,7 +58,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%{_prefix}/lib/node_modules/@name/
+%{_prefix}/lib/node_modules/@module/
 #for @file in @bin
 @file
 #end for
