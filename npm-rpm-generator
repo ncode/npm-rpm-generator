@@ -57,6 +57,11 @@ def meta_generator(module, workdir):
         for _file in os.listdir('%s/%s/bin/' % (tmpdir, data['name'])):
             data['bin'].append('%%attr(0755,root,root) %%{_prefix}/bin/%s;' % _file)
 
+    if not 'homepage' in meta['npm_meta']:
+        meta['npm_meta'].update(
+            {'homepage': 'https://npmjs.org/package/%s' % name}
+        )
+
     data['npm_meta'] = json.loads(open(
         '%s/%s/lib/node_modules/%s/package.json' % (
             tmpdir, data['name'], name
@@ -73,6 +78,7 @@ def setup_workdir():
         ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES',
          'SPECS', 'SRPMS', 'tmp']])
     return workdir
+
 
 def render_spec(meta):
     dependencies = {'nodejs': meta['nodejs']}
@@ -92,19 +98,20 @@ def render_spec(meta):
     )
     print render
 
+
 def build_deps(dependencies):
     for module, version in dependencies:
         build(module)
+
 
 def build(module):
     workdir = setup_workdir()
     meta = meta_generator(module, workdir)
     meta.update({'nodejs': nodejs})
-    if 'homepage' in meta['npm_meta']:
-        print meta['npm_meta']['homepage']
+
 
     if 'dependencies' in meta['npm_meta']:
-        print meta['npm_meta']['dependencies']
+        build_deps(meta['npm_meta']['dependencies']):
 
     render_spec(meta)
 
