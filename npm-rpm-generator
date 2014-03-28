@@ -74,7 +74,6 @@ def setup_workdir():
          'SPECS', 'SRPMS', 'tmp']])
     return workdir
 
-
 def render_spec(meta):
     render = Template(
         file='/home/jumartinez/nodejs-module-spec.tmpl',
@@ -88,16 +87,7 @@ def render_spec(meta):
     )
     print render
 
-
-if __name__ == '__main__':
-
-    module = sys.argv[1]
-    try:
-        nodejs = subprocess.check_output(["node", "-v"]).strip().lstrip('v')
-        npm = subprocess.check_output(["npm", "-v"]).strip()
-    except Exception as e:
-        print "You have to have nodejs and npm installed before start"
-        sys.exit(1)
+def build(module):
     workdir = setup_workdir()
     meta = meta_generator(module, workdir)
     meta.update({'nodejs': nodejs})
@@ -108,3 +98,18 @@ if __name__ == '__main__':
         print meta['npm_meta']['dependencies']
 
     render_spec(meta)
+
+if __name__ == '__main__':
+
+    if len(sys.argv) != 2:
+        print "Usage:: %s module@version" % os.path.basename(sys.arv[0])
+        sys.exit(1)
+
+    module = sys.argv[1] if '@' in sys.argv[1] else "@%s" % sys.argv[1]
+    try:
+        nodejs = subprocess.check_output(["node", "-v"]).strip().lstrip('v')
+        npm = subprocess.check_output(["npm", "-v"]).strip()
+    except Exception as e:
+        print "You have to have nodejs and npm installed before start"
+        sys.exit(1)
+    build(module)
