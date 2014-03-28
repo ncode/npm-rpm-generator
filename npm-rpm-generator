@@ -85,13 +85,13 @@ def render_spec(meta):
     dependencies = [('nodejs', meta['nodejs'])]
     if 'dependencies' in meta['npm_meta']:
         for module, version in meta['npm_meta']['dependencies'].iteritems():
-            dependencies.append((module, version.lstrip('~')))
+            dependencies.append(("nodejs-%s" % module, version.lstrip('~').replace('-','_')))
     print dependencies
 
     render = Template(
         file='/home/jumartinez/nodejs-module-spec.tmpl',
         searchList=[{
-            'version': meta['npm_meta']['version'],
+            'version': meta['npm_meta']['version'].replace('-','_'),
             'name': meta['name'],
             'description': meta['npm_meta']['description'],
             'homepage': meta['npm_meta']['homepage'],
@@ -131,11 +131,20 @@ def build(module):
         stderr=subprocess.STDOUT, shell=True
     )
 
-    for _file in os.listdir('%s/RPMS' % meta['workdir']):
-        shutil.move('%s/RPMS/%s' % (meta['workdir'], _file), '/home/jumartinez/RPMS/%s' % _file)
 
-    for _file in os.listdir('%s/SRPMS' % meta['workdir']):
-        shutil.move('%s/SRPMS/%s' % (meta['workdir'], _file), '/home/jumartinez/SRPMS/%s' % _file)
+    for root, dirs, files in os.walk(meta['workdir'], topdown=False):
+        for name in files:
+            _file = os.path.join(root, name)
+            if '/SRPMS/' in _file:
+                shutil.move(
+                    _file,
+                    '/home/jumartinez/SRPMS/%s' % os.path.basename(_file)
+                )
+            elif '/RPMS/' in _file:
+                shutil.move(
+                    _file,
+                    '/home/jumartinez/RPMS/%s' % os.path.basename(_file)
+                )
 
 if __name__ == '__main__':
 
